@@ -6,6 +6,6 @@ R_from the beginning
 R-start-001
 
 [Code]
-[Homework 2](https://github.com/STAT545-UBC/naman_paul/blob/master/home_work/hw02/hw002.md
+[Homework 2](R_Start-001/README.md
 
 did not work
