@@ -6,6 +6,6 @@ R_from the beginning
 R-start-001
 
 [Code]
-[Homework 2](R_Start-001/README.md
+[Homework 2] (https://github.com/Martinban/R_Start-001/blob/master/README.md)
 
 did not work
