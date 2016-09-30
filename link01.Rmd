@@ -279,8 +279,81 @@ my_gap %>%
 filter(country == "Burundi", year > 1996) %>%
 select(WHEN = year, lifeExp, gdpPercap) %>% #WHEN renamed year
 select(gdpPercap, everything())
+#everything() is one of several helpers for variable selection
+```
+
+#group_by() is a mighty weapon
+dplyr offers powerful tools to solve this class of problem.
+
+group_by() adds extra structure to your dataset – grouping information – which lays the groundwork for computations within the groups.
+summarize() takes a dataset with nn observations, computes requested summaries, and returns a dataset with 1 observation.
+Window functions take a dataset with nn observations and return a dataset with nn observations.
+mutate() and summarize() will honor groups.
+You can also do very general computations on your groups with do(), though elsewhere in this course, I advocate for other approaches that I find more intuitive, using the purrr package.
+Combined with the verbs you already know, these new tools allow you to solve an extremely diverse set of problems with relative ease.
+
+```{r}
+#worth thinking and analyzing
+my_gap %>%
+  group_by(continent) %>%
+  summarize(n_obs = n())
+
+#You could get these same frequencies using table() from base R
+table(gapminder$continent)
+
+str(table(gapminder$continent))
+
+#The tally() function is a convenience function that knows to count rows. It honors groups
+my_gap %>%
+group_by(continent) %>%
+tally()
+
+#The count() function is an even more convenient function that does both grouping and counting.
+my_gap %>%
+count(continent)
+
+#What if we wanted to add the number of unique countries for each continent? You can compute multiple summaries inside summarize(). Use the n_distinct() function to count the number of distinct countries within each continent.
+my_gap %>%
+group_by(continent) %>%
+summarize(n_obs = n(),
+n_countries = n_distinct(country))
 
 ```
+
+#General summarization: The functions you’ll apply within summarize() include classical statistical summaries, like mean(), median(), var(), sd(), mad(), IQR(), min(), and max(). Remember they are functions that take nn inputs and distill them down into 1 output.
+
+```{r}
+my_gap %>%
+group_by(continent) %>%
+summarize(avg_lifeExp = mean(lifeExp))
+
+#summarize_each() applies the same summary function(s) to multiple variables. Let’s compute average and median life expectancy and GDP per capita by continent by year … but only for 1952 and 2007.
+
+my_gap %>%
+filter(year %in% c(1952, 2007)) %>%
+group_by(continent, year) %>%
+summarise_each(funs(mean, median), lifeExp, gdpPercap)
+
+#Let’s focus just on Asia. What are the minimum and maximum life expectancies seen by year?
+
+my_gap %>%
+filter(continent == "Asia") %>%
+group_by(year) %>%
+summarize(min_lifeExp = min(lifeExp), max_lifeExp = max(lifeExp))
+
+#Of course it would be much more interesting to see which country contributed these extreme observations. Is the minimum (maximum) always coming from the same country? That’s where window functions come in.
+#worth analyzing
+my_gap %>%
+filter(continent == "Asia") %>%
+select(year, country, lifeExp) %>%
+group_by(year) %>%
+filter(min_rank(desc(lifeExp)) < 2 | min_rank(lifeExp) < 2) %>%
+arrange(year) %>%
+print(n = Inf)
+
+```
+
+
 
 
 
