@@ -343,6 +343,7 @@ summarize(min_lifeExp = min(lifeExp), max_lifeExp = max(lifeExp))
 
 #Of course it would be much more interesting to see which country contributed these extreme observations. Is the minimum (maximum) always coming from the same country? That’s where window functions come in.
 #worth analyzing
+
 my_gap %>%
 filter(continent == "Asia") %>%
 select(year, country, lifeExp) %>%
@@ -350,6 +351,52 @@ group_by(year) %>%
 filter(min_rank(desc(lifeExp)) < 2 | min_rank(lifeExp) < 2) %>%
 arrange(year) %>%
 print(n = Inf)
+#tidying and reshaping data! Wouldn’t it be nice to have one row per year?
+
+#How did that actually work? First, I store and view a partial that leaves off the filter() statement. All of these operations should be familiar.
+asia <- my_gap %>%
+  filter(continent == "Asia") %>%
+  select(year, country, lifeExp) %>%
+  group_by(year)
+asia
+
+#apply a window function – min_rank(). Since asia is grouped by year, min_rank() operates within mini-datasets, each for a specific year. Applied to the variable lifeExp, min_rank() returns the rank of each country’s observed life expectancy.
+#For concreteness, I use mutate() to actually create these variables, even though I dropped this in the solution above. 
+
+asia %>%
+  mutate(le_rank = min_rank(lifeExp),
+         le_desc_rank = min_rank(desc(lifeExp))) %>% 
+  filter(country %in% c("Afghanistan", "Japan", "Thailand"), year > 1995)
+#worth reasoning the above code
+
+#You can understand the original filter() statement now:
+
+filter(min_rank(desc(lifeExp)) < 2 | min_rank(lifeExp) < 2)
+#If we had wanted just the min OR the max, an alternative approach using top_n() would have worked.
+my_gap %>%
+filter(continent == "Asia") %>%
+select(year, country, lifeExp) %>%
+arrange(year) %>%
+group_by(year) %>%
+#top_n(1, wt = lifeExp)        ## gets the min
+top_n(1, wt = desc(lifeExp)) ## gets the max
+
+# let’s answer that “simple” question: which country experienced the sharpest 5-year drop in life expectancy?
+#Recall that this excerpt of the Gapminder data only has data every five years, e.g. for 1952, 1957, etc. So this really means looking at life expectancy changes between adjacent timepoints.
+
+#let’s do it by continent while we’re at it.
+my_gap %>%
+select(country, year, continent, lifeExp) %>%
+group_by(continent, country) %>%
+## within country, take (lifeExp in year i) - (lifeExp in year i - 1)
+## positive means lifeExp went up, negative means it went down
+mutate(le_delta = lifeExp - lag(lifeExp)) %>%
+## within country, retain the worst lifeExp change = smallest or most negative
+summarize(worst_le_delta = min(le_delta, na.rm = TRUE)) %>%
+## within continent, retain the row with the lowest worst_le_delta
+top_n(-1, wt = worst_le_delta) %>%
+arrange(worst_le_delta)
+
 
 ```
 
