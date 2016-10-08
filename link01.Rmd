@@ -397,10 +397,11 @@ summarize(worst_le_delta = min(le_delta, na.rm = TRUE)) %>%
 top_n(-1, wt = worst_le_delta) %>%
 arrange(worst_le_delta)
 
-
+<- 
 ```
+#cheatsheet <-  help-cheatsheet
 
-
+=
 
 
 

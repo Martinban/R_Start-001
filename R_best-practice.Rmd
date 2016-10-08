@@ -1,0 +1,86 @@
+---
+title: "R_best-practice"
+author: "Fuqiang Ban"
+date: "October 7, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+#1. Clear objects, clear Console
+```{r}
+rm(list = ls()
+#ctrl+l clear console
+```
+
+#2. partial clear obj
+```{r}
+rm(list = ls()[grep("^tmp", ls())])
+
+```
+
+#3. install needed packagies once
+```{r}
+#list
+
+```
+
+#4. load packages
+```{r}
+library(gapminder),
+require()
+```
+
+#5. load data
+```{r}
+
+```
+
+#data colection
+```{r}
+#1. load dataset #4
+#2. copy dataset to make a new one
+(my_copy_gap <- gapminder)
+```
+
+
+#
+#
+#.data cleaning
+```{r}
+#subseting: filter(df,logic expr)
+
+country_set01 <-  filter(gapminder, country == c("Rwanda", "Afghanistan"))
+
+#subset using piping
+set_cleaned01 <- my_copy_gap %>%
+  filter(continent == "Asia") %>%
+    select(year, country, lifeExp) %>%
+      group_by(year) %>%
+        filter(min_rank(desc(lifeExp)) < 2 | min_rank(lifeExp) < 2) %>%
+          arrange(year) %>%
+print(n = Inf)
+
+
+```
+
+
+
+#7Cheatsheets
+```{r}
+#list
+print("functions")
+Legends (ggplot2):http://www.cookbook-r.com/Graphs/Legends_(ggplot2)/
+  
+
+```
+
+
+
+
+
+

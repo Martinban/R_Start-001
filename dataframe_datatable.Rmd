@@ -1,0 +1,183 @@
+---
+title: "data.frame and data.table"
+author: "Fuqiang Ban"
+date: "October 4, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+#The install-library-require sequence
+#require install packages
+#install.packages("data.table")
+require()
+library(data.table)
+```
+
+
+```{r}
+# This vignette is aimed at those who are already familiar with creating and subsetting data.frame
+#  briefly covering a few
+# features: 1. Keys; 2. Fast Grouping; and 3. Fast ordered join
+
+#create a data.frame using the function data.frame
+DF = data.frame(x=c("b","b","b","a","a"),v=rnorm(5))#5 is the number of observations, x is a factor or categorical varialble
+DF
+
+#A data.table is created in exactly the same way
+ DT = data.table(x=c("b","b","b","a","a"),v=rnorm(5))
+ DT
+
+#  a data.table prints the row numbers with a colon
+ # We can easily convert existing data.frame objects to data.table
+
+CARS = data.table(cars)#cars is a data frame
+
+head(CARS)#CARS is a data table converted by the data.table(a data.frame)
+
+#We have just created two data.tables: DT and CARS. It is often useful to see a list of all data.tables in memory
+ tables()
+ 
+ sapply(DT,class)
+ 
+#using apply, sapply and lapply, best suited for people relatively new to R 
+ 
+ 
+#generate a random data set
+m <- matrix(data=cbind(rnorm(30, 0), rnorm(30, 2), rnorm(30, 5)), nrow=30, ncol=3)#rnomr(30,y) y is the mean of the distribution 
+m# m is a matric of 30 rows and 3 columns
+#Apply
+#When do we use apply? When we have some structured blob of data that we wish to perform operations on
+#First I want to make sure I created that matrix correctly, three columns each with a mean 0, 2 and 5 respectively. We can use apply and the base mean function to check this. 
+apply(m, 1, mean)#this is wrong, because it request to past 1:row each cycle. and get the mean of each row of three column. 30 num of averges
+
+apply(m, 2, mean)#MARGIN is a vector: for a matrix, 1 rows, 2 columns, c(1,2) indicates rows and columns
+
+apply(m, c(1,2), mean)#mean does not work inthis case
+
+
+
+#our own function
+apply(m, 2, function(x) length(x[x<0]))# margin 2 pass each column as x, length(x[x<0]) give the numbers of the elements negative
+apply(m, 2, function(x) is.matrix(x))#checking if a column x is a matrix
+apply(m, 2, function(x) is.vector(x))
+apply(m, 2, function(x) is.data.frame(x))
+
+apply(m, 2, function(x) mean(x[x>0]))
+
+
+sapply(1:3, function(x) x^2)#sapply(1:3, , ), which works on a list or vector of data, return a vector
+ lapply(1:3, function(x) x^2)# return a list of vectors
+ 
+ #Passing simplify=FALSE to sapply will also give you a list:
+sapply(1:3, function(x) x^2, simplify=F)#return a list of vectors
+
+
+ #And you can use unlist with lapply to get a vector.
+unlist(lapply(1:3, function(x) x^2))
+ 
+# best to use sapply or lapply as makes sense for your data and what you want to receive back. If you want a list returned, use lapply. If you want a vector, use sapply.
+sapply(1:3, function(x) mean(m[,x]))#dirty way to pass in the three column of m
+
+sapply(1:3, function(x, y) mean(y[,x]), y=m)# 1st pass in 1:3 to x, then m is passed to y, then y[,x] is passed to mean()
+
+rep_DF <- DF
+rep_DF
+
+#key: In data.table, a key consists of one or more columns.Uniqueness is not enforced; i.e., duplicate key values are allowed. Since the rows are sorted by
+#the key, any duplicates in the key will appear consecutively.
+
+
+DT[2,]#u have to have a clear idea what DT data structure, then you can use row, col or logic expression in the [] for selection
+
+DT[x=="b"]
+DT[x=="b",]#since in a data table you don't need DT$x=="b", you can use the column nae as a variable. but DT$x works
+
+DT = data.table(x=c("b","b","b","a","a"),v=rnorm(5))#tables(DT) Key empty
+tables()
+setkey(DT,x) #after setkey() key is the x column
+tables()
+DT["b",]#you can use the value "b" of x vector as expression to subset data table DT,In contrast to a data.frame where only the first rowname is returned when the rownames contain duplicates
+c001
+
+DT
+DT[x=="b",]# did not need to prefix x with DT$x. In data.table queries,
+
+DT["b",mult="first"]#after u set the key columhn, you can use the mult="first" or "last" subset and slice entries
+
+# Let’s now create a new data.frame. We will make it large enough to demonstrate the difference
+# between a vector scan and a binary search
+
+#since there are no rownames, the following does not work
+cat(try(DT["b",],silent=TRUE))
+
+# 10 million rows, 676 groups
+grpsize = ceiling(1e7/26^2) 
+tt=system.time( DF <- data.frame(
+x=rep(LETTERS,each=26*grpsize),
+y=rep(letters,each=grpsize),
+v=runif(grpsize*26^2),
+stringsAsFactors=FALSE))
+
+head(DF,3)
+
+
+tail(DF,3)
+dim(DF)
+
+tt=system.time(ans1 <- DF[DF$x=="R" & DF$y=="h",]) # ✬vector scan✬
+system.time(ans1 <- DF[DF$x=="R" & DF$y=="h",])#time profile
+ans1
+head(ans1,3)
+dim(ans1)
+
+
+
+#Now convert to a data.table and extract the same group
+DT = as.data.table(DF)
+
+system.time(setkey(DT,x,y)) # one-off cost, usually
+
+ss=system.time(ans2 <- DT[list("R","h")])# binary search
+system.time(ans2 <- DT[list("R","h")])# binary search
+dim(ans2)
+head(ans2,3)
+ system.time(ans1 <- DT[x=="R" & y=="h",]) # works but is using data.table badly
+
+# We use
+# the key to take advantage of the fact that the table is sorted and use binary search to find the
+# matching rows. We didn’t vector scan; we didn’t use ==
+system.time(ans2 <- DF[DF$x=="R" & DF$y=="h",])
+
+
+identical(ans1$v, ans2$v)
+mapply(identical,ans1,ans2)#display coloumn name as they are in the table
+
+
+#2. Fast grouping
+DT[,sum(v)]
+see <- DT[,sum(v),by=x] #the display is as usual by the groups of x values
+DT[by=x]
+
+#taply
+
+tt <- tapply(DT$v,DT$x,sum) #will flip the table and show it
+tapply(DT$v,DT$x,sum)#flip the values of x as the column names
+
+ttt=system.time(tt <- tapply(DT$v,DT$x,sum));
+tt
+
+
+sss
+
+
+
+
+```
+
+
