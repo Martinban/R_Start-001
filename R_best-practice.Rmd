@@ -31,14 +31,43 @@ rm(list = ls()[grep("^tmp", ls())])
 
 #4. load packages
 ```{r}
-library(gapminder),
+# The gapminder data frame is a special kind of data frame: a tibble.
+library(gapminder)
+
+library(tidyverse)
 require()
+```
+
+#It’s tibble-ness is why we get nice compact printing. 
+```{r}
+gapminder
+# print(), that know about tibbles and do something special. 
+print(gapminder)
+# summary() do not know tibbles, but know DF, giving you a discriptive description of the DF table
+summary(gapminder)
+# To turn any data frame into a tibble use as_tibble()
+as_tibble(iris)
+
 ```
 
 #5. load data
 ```{r}
 
 ```
+
+#
+```{r}
+# R-data terminology
+# dplyr is a package for data manipulation
+# part of the the tidyverse meta-package
+# plyr covers a diverse set of inputs and outputs (e.g., arrays, data frames, lists)
+# but focus on data frames or, in the tidyverse, “tibbles”.
+# “data frame in, data frame out” proved to be so incredibly important.
+# for subset(), apply(), [sl]apply(), tapply(), aggregate(), split(), do.call(), with(), within()
+
+
+```
+
 
 #data colection
 ```{r}
@@ -52,9 +81,15 @@ require()
 #
 #.data cleaning
 ```{r}
-#subseting: filter(df,logic expr)
+
+# Use filter() to subset data row-wise: subseting: filter(df,logic expr)
+set_subset_row <- filter(gapminder, lifeExp < 29)
+length(set_subset_row)#return how many variables
 
 country_set01 <-  filter(gapminder, country == c("Rwanda", "Afghanistan"))
+filter(gapminder, country %in% c("Rwanda", "Afghanistan"))
+country_set02 <- filter(gapminder, country == "Rwanda", year > 1979)
+
 
 #subset using piping
 set_cleaned01 <- my_copy_gap %>%
@@ -65,6 +100,52 @@ set_cleaned01 <- my_copy_gap %>%
           arrange(year) %>%
 print(n = Inf)
 
+
+#subsetting using base R code
+
+set_Rbase_1 <- gapminder[gapminder$lifeExp < 29, ] ## repeat `gapminder`, [i, j] indexing is distracting
+set_Rbase_2 <- subset(gapminder, country == "Rwanda") ## almost same as filter; quite nice actually
+
+#subsetting row and column simutaneously using R-base
+
+gapminder[gapminder$country == "Cambodia", c("year", "lifeExp")]
+
+
+```
+
+#subsetting columns using select(DF, col1, col2, ....)
+```{r}
+
+set_col01 <- select(gapminder, year, lifeExp)
+
+gapminder %>%
+  select(year, lifeExp) %>%
+  head(4)
+
+
+```
+
+
+
+
+#the pipe
+```{r}
+gapminder %>% head()#df feed to a function as an argument
+gapminder %>% head(3)
+```
+
+#plot
+```{r}
+gapminder %>%
+  select(year, lifeExp) %>%
+  head(4) %>% plot()#working
+
+
+test01 <- gapminder %>%
+  select(year, lifeExp) %>%
+  head(4)
+  
+  p00 <- ggplot(test01,aes(x =year, y = lifeExp)) +geom_point()#not working
 
 ```
 
